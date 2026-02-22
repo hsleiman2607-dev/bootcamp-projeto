@@ -11,9 +11,10 @@ Sistema backend desenvolvido para facilitar a troca de conhecimentos entre pesso
 * **PostgreSQL**
 * **Thunder Client** (para testes de API)
 ## 🚀 Como Rodar o Projeto
+### 1. Clone o repositório
+```bash
+git clone "link-do-repositorio"
 
-1. **Clone o repositório:**
-   git clone "link Do repositorio"
 3. **Instalar Dependencias**
    Instalar o Prisma CLI: npm install prisma --save-dev
    Instalar o Prisma Client: npm install @prisma/client
