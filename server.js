@@ -115,8 +115,6 @@ app.patch("/ofertas/:ofertaId/vincular-pessoa", async (req, res) => {
 
 
 
-
-
 //Rotas CRUD para pessoas
 // Rota Cdastrar nova pessoa
 app.post("/pessoas", async (req, res) => {
@@ -156,8 +154,130 @@ app.get("/pessoas", async (req, res) => {
         res.status(500).json({ error: "Erro ao buscar pessoas", details: error.message });
     }
 });
-// Rota listar todas as ofertas ASSOCIAÇÃO (JOIN) com pessoas
- 
+
+
+// Rota atualizar pessoa
+app.put("/pessoas/:id", async (req, res) => {
+    const { id } = req.params;
+    const { nome_completo, email, telefone, descricao } = req.body;
+    try {
+        const pessoaAtualizada = await prisma.pessoas.update({
+            where: { pessoa_ID: parseInt(id) },
+            data: {
+                nome_completo,
+                email,
+                telefone,
+                descricao
+            }
+        });
+        res.status(200).json(pessoaAtualizada);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao atualizar pessoa", details: error.message });
+    }
+});
+
+// Rota deletar pessoa
+app.delete("/pessoas/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.pessoas.delete({
+            where: { pessoa_ID: parseInt(id) }
+        });
+        res.status(204).send();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao deletar pessoa", details: error.message });
+    }
+});
+
+//Rotas CRUD para Categorias
+// Rota cadastrar nova categoria
+// Rota de POST para Categorias --> nao esta rodando na requisacao no thunder client
+app.post("/categorias", async (req, res) => {
+    // Se enviar um único objeto: { "CatNome": "..." }
+    const { CatNome } = req.body; 
+    if (!CatNome) {
+        return res.status(400).json({ error: "O campo CatNome é obrigatório" });
+    }
+
+    try {
+        const novaCategoria = await prisma.categorias.create({
+            data: {
+                CatNome: CatNome
+            }
+        });
+        res.status(201).json(novaCategoria);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao criar categoria", details: error.message });
+    }
+});
+//nao esta rodando na requisacao no thunder client
+app.get("/categorias", async (req, res) => {
+    console.log("Recebida requisição GET para /categorias");
+    try {
+        const categorias = await prisma.categorias.findMany();
+        res.status(200).json(categorias);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao buscar categorias", details: error.message });
+    }
+});
+
+
+// nao esta rodando na requisacao no thunder client
+app.put("/categorias/:id", async (req, res) => {
+    const { id } = req.params;
+    const { CatNome } = req.body;
+
+    try {
+        const categoriaAtualizada = await prisma.categorias.update({
+            where: { categoria_ID: parseInt(id) },
+            data: {
+                CatNome
+            }
+        });
+        res.status(200).json(categoriaAtualizada);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao atualizar categoria", details: error.message });
+    }
+});
+//nao esta rodando na requisacao no thunder client
+app.delete("/categorias/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.categorias.delete({
+            where: { categoria_ID: parseInt(id) }
+        });
+        res.status(204).send();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao deletar categoria", details: error.message });
+    }
+});
+
+//nao esta rodando na requisacao no thunder client
+// filtrar ofertas por categoria -- nao ridando no get requisicao
+app.get("/ofertas/categoria/:categoriaId", async (req, res) => {
+    const { categoriaId } = req.params;
+    try {
+        const ofertas = await prisma.ofertas.findMany({
+            where: { categoria_ID: parseInt(categoriaId) },
+            include: {
+                categorias: true
+            }
+        });
+        res.status(200).json(ofertas);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao buscar ofertas por categoria", details: error.message });
+    }
+});
+
+
+
 app.listen(8080, () => {
     console.log(`🚀 Servidor rodando em http://localhost:8080`);
 });
