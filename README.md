@@ -18,6 +18,9 @@ Sistema backend desenvolvido para facilitar a troca de conhecimentos entre pesso
 ### 1. Clone o repositório
 ```bash
 git clone "link-do-repositorio"
+### 2. **Instalar Dependencias**
+
+
 
 
 
@@ -25,18 +28,9 @@ git clone "link-do-repositorio"
 
 
    
- **Comandos ultilizaveis:**
-  npx prisma studio: Abre uma interface visual no navegador para visualizar e editar os dados do banco.
 
 
-  🛠️ **Tecnologias Utilizadas**
 
-**Node.js:** Ambiente de execução JavaScript.
-
-**Express:** Framework para criação das rotas da API.
-
-**Prisma:** ORM para modelagem do banco de dados.
-
-**Git/GitHub:** Versionamento e controle de código.
+  
 
    
