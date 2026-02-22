@@ -18,7 +18,6 @@ Sistema backend desenvolvido para facilitar a troca de conhecimentos entre pesso
 ### 1. Clone o repositório
 ```bash
 git clone "link-do-repositorio"
-### 2. **Instalar Dependencias**
 
 
 
