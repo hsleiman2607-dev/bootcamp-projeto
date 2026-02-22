@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Categorias {
+  categoria_ID Int       @id @default(autoincrement())
+  CatNome      String?   @db.VarChar(255)
+  Ofertas      Ofertas[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Ofertas {
+  oferta_ID    Int      @id @default(autoincrement())
+  titulo       String?     @db.VarChar(100)
+  descricao    String?    
+  categoria_ID Int?
+  nivel        String?     @db.VarChar(255)
+  pessoa_ID    Int?
+  Categorias   Categorias? @relation(fields: [categoria_ID], references: [categoria_ID], onUpdate: NoAction, map: "fk_categoria")
+  Pessoas      Pessoas?    @relation(fields: [pessoa_ID], references: [pessoa_ID], onDelete: Cascade, onUpdate: NoAction, map: "fk_pessoa")
+
+  @@index([categoria_ID], map: "idx_ofertas_categoria")
+  @@index([pessoa_ID], map: "idx_ofertas_pessoa")
+}
+
+model Pessoas {
+  pessoa_ID     Int       @id @default(autoincrement())
+  nome_completo String?   @db.VarChar(255)
+  email         String?   @db.VarChar(255)
+  telefone      String?   @db.VarChar(20)
+  descricao     String?   
+  Ofertas       Ofertas[]
+}
