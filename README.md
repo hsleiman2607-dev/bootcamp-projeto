@@ -20,11 +20,6 @@ Sistema backend desenvolvido para facilitar a troca de conhecimentos entre pesso
 git clone "link-do-repositorio"
 
 
-### 2. Instalar Dependências
-```bash
-npm install prisma --save-dev
-npm install @prisma/client
-
 
 
 
