@@ -21,20 +21,7 @@ git clone "link-do-repositorio"
 
 
 
-3. **Instalar Dependencias**
-   Instalar o Prisma CLI: npm install prisma --save-dev
-   Instalar o Prisma Client: npm install @prisma/client
-4. **Inicializar o Prisma**
-      npx prisma init
-6. **Configurar a Conexão com o Banco**
-     Abra o arquivo .env e configure a sua URL de conexão:
-        DATABASE_URL="postgresql://USUARIO:SENHA@localhost:5432/NOME_DO_BANCO?schema=public"
-8. **Sincronizar o Banco de Dados**
-     ---Sempre que o schema.prisma for alterado:
-     **Gerar uma Migração (Cria as tabelas no banco):**
-        npx prisma migrate dev --name init
-      **Gerar o Prisma Client (Atualiza o IntelliSense no código):**
-        npx prisma generate
+
 
 
    
