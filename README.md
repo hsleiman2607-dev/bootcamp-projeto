@@ -19,6 +19,11 @@ Sistema backend desenvolvido para facilitar a troca de conhecimentos entre pesso
 ```bash
 git clone "link-do-repositorio"
 
+### 2. Instalar Dependencias
+Instalar o Prisma CLI:
+\` \` \`bash (comando) \` \` \`
+
+
 
 
 
