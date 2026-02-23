@@ -1,290 +1,93 @@
-
 import 'dotenv/config';
-import express, { request, response } from "express"
+import express from "express";
 import prisma from "./PrismaClient.js";
-
 
 const app = express();
 app.use(express.json());
 
-
-
-// Rotas CRUD para ofertas 
-// Rota cadastrar nova oferta 
-app.post("/ofertas", async (req, res) => {
-    const { titulo, descricao, nivel } = req.body;
-    const ofertas = await prisma.ofertas.create({
-        data: {
-            titulo,
-            descricao,
-            nivel
-        }
-    });
-    res.status(201).json(ofertas);
+// ==========================================
+// 1. ROTAS DE CATEGORIAS
+// ==========================================
+app.post("/categorias", async (req, res) => {
+    const { CatNome } = req.body; 
+    if (!CatNome) return res.status(400).json({ error: "O campo CatNome é obrigatório" });
+    try {
+        const nova = await prisma.categoria.create({ data: { CatNome } });
+        res.status(201).json(nova);
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Rota listar todas as ofertas ASSOCIAÇÃO (JOIN) com pessoas
+app.get("/categorias", async (req, res) => {
+    const lista = await prisma.categoria.findMany();
+    res.json(lista);
+});
 
-app.get("/ofertas", async (req, res) => {
+// ==========================================
+// 2. ROTAS DE PESSOAS (Com Telefone e Descrição)
+// ==========================================
+app.post("/pessoas", async (req, res) => {
+    const { nome_completo, email, telefone, descricao, CatID } = req.body;
+    if (!nome_completo || !email || !CatID) {
+        return res.status(400).json({ error: "Nome, Email e CatID são obrigatórios" });
+    }
     try {
-        const ofertas = await prisma.ofertas.findMany({
-            include: {
-                Pessoas: true,    // Nome exato que está no schema
-                Categorias: true  // Se quiser incluir a categoria também
+        const pessoa = await prisma.pessoa.create({
+            data: { 
+                nome_completo, 
+                email, 
+                telefone: telefone || null,
+                descricao: descricao || null,
+                CatID: parseInt(CatID) 
             }
         });
-        res.status(200).json(ofertas);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao buscar ofertas", details: error.message });
-    }
+        res.status(201).json(pessoa);
+    } catch (e) { res.status(500).json({ error: "E-mail duplicado ou erro no banco." }); }
 });
 
+app.get("/pessoas", async (req, res) => {
+    const lista = await prisma.pessoa.findMany({ include: { categoria: true } });
+    res.json(lista);
+});
 
-// Rota atualizar oferta
-app.put("/ofertas/:id", async (req, res) => {
-    const{ titulo, descricao, categoria } = req.body;
-    const { id } = req.params;
+// ==========================================
+// 3. ROTAS DE OFERTAS (Com Filtro Extra e Join)
+// ==========================================
+app.post("/ofertas", async (req, res) => {
+    const { titulo, descricao, nivel, categoria_ID, pessoa_ID } = req.body;
+    if (!titulo || !categoria_ID || !pessoa_ID) {
+        return res.status(400).json({ error: "Título, categoria_ID e pessoa_ID são obrigatórios" });
+    }
     try {
-        const ofertas = await prisma.ofertas.update({
-            where: { oferta_ID: parseInt(id) },
+        const novaOferta = await prisma.oferta.create({
             data: {
                 titulo,
-                descricao,
-                categoria
+                descricao: descricao || null,
+                nivel: nivel || null,
+                categoria_ID: parseInt(categoria_ID),
+                pessoa_ID: parseInt(pessoa_ID)
             }
         });
-        res.status(200).json(ofertas);
-    } catch (error) {
-         return response.status(500).send();
-    }
+        res.status(201).json(novaOferta);
+    } catch (e) { res.status(500).json({ error: "Erro ao criar oferta. Verifique IDs." }); }
 });
 
-// Rota deletar oferta
+// GET /ofertas - Suporta filtro opcional: /ofertas?categoria_ID=1
+app.get("/ofertas", async (req, res) => {
+    const { categoria_ID } = req.query;
+    try {
+        const ofertas = await prisma.oferta.findMany({
+            where: categoria_ID ? { categoria_ID: parseInt(categoria_ID) } : {},
+            include: { categoria: true, pessoa: true }
+        });
+        res.json(ofertas);
+    } catch (e) { res.status(500).json({ error: "Erro ao buscar ofertas" }); }
+});
+
 app.delete("/ofertas/:id", async (req, res) => {
-    const { id } = req.params;
-    try {        
-        await prisma.ofertas.delete({
-            where: { oferta_ID: parseInt(id) }
-        });
-        return response.status(204).send();
-    } catch (error) {
-        return response.status(500).send();
-    }
-});
-
-//associacao cada oferta pertence a uma pessoa - ainda em teste 
-app.post("/ofertas/:ofertaId/pessoas/:pessoaId", async (req, res) => {
-    const { ofertaId, pessoaId } = req.params;
     try {
-        const ofertaAtualizada = await prisma.ofertas.update({
-            where: { oferta_ID: parseInt(ofertaId) },
-            data: {
-                id: parseInt(ofertaId),
-                pessoa_ID: parseInt(pessoaId)
-
-            }
-        });
-        res.status(200).json(ofertaAtualizada);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao associar oferta à pessoa", details: error.message });
-    }
-});
-
-app.patch("/ofertas/:ofertaId/vincular-pessoa", async (req, res) => {
-    const { ofertaId } = req.params;
-    const { pessoa_ID } = req.body; // ID da pessoa enviado no corpo da requisição
-
-    try {
-        const ofertaVinculada = await prisma.ofertas.update({
-            where: { oferta_ID: Number(ofertaId) },
-            data: {
-                pessoa_ID: Number(pessoa_ID)
-            },
-            // Opcional: já retorna os dados da pessoa associada
-            include: { Pessoas: true } 
-        });
-
-        res.status(200).json(ofertaVinculada);
-    } catch (error) {
-        res.status(500).json({ error: "Não foi possível realizar a associação." });
-    }
-});
-
-
-
-
-//Rotas CRUD para pessoas
-// Rota Cdastrar nova pessoa
-app.post("/pessoas", async (req, res) => {
-    try {
-        const { nome_completo, email, telefone, descricao } = req.body;
-        
-        const pessoa = await prisma.pessoas.create({
-            data: {
-                nome_completo,
-                email,
-                telefone,
-                descricao
-            }
-        });
-
-        return res.status(201).json(pessoa);
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Erro ao criar registro no banco de dados." });
-    }
-});
-
-// Rota listar todas as pessoas ASSOCIAÇÃO (JOIN) com ofertas
-app.get("/pessoas", async (req, res) => {
-    try {
-        const pessoas = await prisma.pessoas.findMany({
-            data: {
-                nome_completo,
-                email,
-                telefone,
-                descricao    
-            }
-        });
-        res.status(200).json(pessoas);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao buscar pessoas", details: error.message });
-    }
-});
-
-
-// Rota atualizar pessoa
-app.put("/pessoas/:id", async (req, res) => {
-    const { id } = req.params;
-    const { nome_completo, email, telefone, descricao } = req.body;
-    try {
-        const pessoaAtualizada = await prisma.pessoas.update({
-            where: { pessoa_ID: parseInt(id) },
-            data: {
-                nome_completo,
-                email,
-                telefone,
-                descricao
-            }
-        });
-        res.status(200).json(pessoaAtualizada);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao atualizar pessoa", details: error.message });
-    }
-});
-
-// Rota deletar pessoa
-app.delete("/pessoas/:id", async (req, res) => {
-    const { id } = req.params;
-    try {
-        await prisma.pessoas.delete({
-            where: { pessoa_ID: parseInt(id) }
-        });
+        await prisma.oferta.delete({ where: { id: parseInt(req.params.id) } });
         res.status(204).send();
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao deletar pessoa", details: error.message });
-    }
+    } catch (e) { res.status(500).json({ error: "Erro ao deletar" }); }
 });
 
-//Rotas CRUD para Categorias
-// Rota cadastrar nova categoria
-// Rota de POST para Categorias --> nao esta rodando na requisacao no thunder client
-app.post("/categorias", async (req, res) => {
-    // Se enviar um único objeto: { "CatNome": "..." }
-    const { CatNome } = req.body; 
-    if (!CatNome) {
-        return res.status(400).json({ error: "O campo CatNome é obrigatório" });
-    }
-
-    try {
-        const novaCategoria = await prisma.categorias.create({
-            data: {
-                CatNome: CatNome
-            }
-        });
-        res.status(201).json(novaCategoria);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao criar categoria", details: error.message });
-    }
-});
-//nao esta rodando na requisacao no thunder client
-app.get("/categorias", async (req, res) => {
-    console.log("Recebida requisição GET para /categorias");
-    try {
-        const categorias = await prisma.categorias.findMany();
-        res.status(200).json(categorias);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao buscar categorias", details: error.message });
-    }
-});
-
-
-// nao esta rodando na requisacao no thunder client
-app.put("/categorias/:id", async (req, res) => {
-    const { id } = req.params;
-    const { CatNome } = req.body;
-
-    try {
-        const categoriaAtualizada = await prisma.categorias.update({
-            where: { categoria_ID: parseInt(id) },
-            data: {
-                CatNome
-            }
-        });
-        res.status(200).json(categoriaAtualizada);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao atualizar categoria", details: error.message });
-    }
-});
-//nao esta rodando na requisacao no thunder client
-app.delete("/categorias/:id", async (req, res) => {
-    const { id } = req.params;
-    try {
-        await prisma.categorias.delete({
-            where: { categoria_ID: parseInt(id) }
-        });
-        res.status(204).send();
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao deletar categoria", details: error.message });
-    }
-});
-
-//nao esta rodando na requisacao no thunder client
-// filtrar ofertas por categoria -- nao ridando no get requisicao
-app.get("/ofertas/categoria/:categoriaId", async (req, res) => {
-    const { categoriaId } = req.params;
-    try {
-        const ofertas = await prisma.ofertas.findMany({
-            where: { categoria_ID: parseInt(categoriaId) },
-            include: {
-                categorias: true
-            }
-        });
-        res.status(200).json(ofertas);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao buscar ofertas por categoria", details: error.message });
-    }
-});
-
-
-
-app.listen(8080, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:8080`);
-});
-
-
-
-
-
-
-
+app.listen(8080, () => console.log("🚀 Backend 100% Completo em http://localhost:8080"));
