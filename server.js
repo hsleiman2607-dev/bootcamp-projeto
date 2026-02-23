@@ -22,6 +22,7 @@ app.get("/categorias", async (req, res) => {
     res.json(lista);
 });
 
+
 // ==========================================
 // 2. ROTAS DE PESSOAS (Com Telefone e Descrição)
 // ==========================================
