@@ -90,5 +90,22 @@ app.delete("/ofertas/:id", async (req, res) => {
         res.status(204).send();
     } catch (e) { res.status(500).json({ error: "Erro ao deletar" }); }
 });
+app.put("/ofertas/:id", async (req, res) => {
+    const { titulo, descricao, nivel, categoria_ID, pessoa_ID } = req.body;
+    try {
+        const ofertaAtualizada = await prisma.oferta.update({
+            where: { id: parseInt(req.params.id) },
+            data: {
+                titulo: titulo || undefined,
+                descricao: descricao || undefined,
+                nivel: nivel || undefined,
+                categoria_ID: categoria_ID ? parseInt(categoria_ID) : undefined,
+                pessoa_ID: pessoa_ID ? parseInt(pessoa_ID) : undefined
+            }
+        });
+        res.json(ofertaAtualizada);
+    } catch (e) { res.status(500).json({ error: "Erro ao atualizar" }); 
+}
+});
 
 app.listen(8080, () => console.log("🚀 Backend 100% Completo em http://localhost:8080"));
